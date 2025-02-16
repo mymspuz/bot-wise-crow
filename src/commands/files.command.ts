@@ -68,6 +68,9 @@ export class FilesCommand extends Command {
 
     handle() {
         this.bot.on('document', async (ctx) => {
+            const isEmptyCell = (cellValue: string | number): boolean => {
+                return !cellValue || cellValue === 'no' || (typeof cellValue === 'string' && cellValue.trim() === '')
+            }
             const { file_id: fileId, mime_type: mimeType } = ctx.update.message.document
             if (mimeType !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
                 await ctx.reply(`Неверный тип файла [${mimeType}]`)
@@ -107,7 +110,8 @@ export class FilesCommand extends Command {
                                     })
                                     row.forEach((cell, indexCell) => {
                                         // Собираем список заданий
-                                        if (indexRow === 0) cell !== 'no' && tasks.push({
+                                        if (indexRow === 0 && !isEmptyCell(cell)) console.log('task cell - ', `[${cell}] : ${tasks.length}`)
+                                        if (indexRow === 0 && !isEmptyCell(cell)) tasks.push({
                                             name: cell,
                                             setting: JSON.parse(JSON.stringify(settingsTasks)),
                                             order: tasks.length + 1
@@ -133,7 +137,7 @@ export class FilesCommand extends Command {
                                         }
                                         // Для каждого изделия собираем задания и заполняем его настройки
                                         if (indexRow > 1) {
-                                            if (cell !== 'no') {
+                                            if (!isEmptyCell(cell)) {
                                                 // Если номер ячейки находится среди номеров настроек проекта
                                                 const property = settingsProjects.filter(sp => sp.position === indexCell)
                                                 if (property.length) {
@@ -168,7 +172,7 @@ export class FilesCommand extends Command {
                                             if (/^\d+$/.test(row[2])) {
                                                 sold.push({ article: row[0], sold: Number(row[2]) })
                                             } else {
-                                                if (row[2] !== 'no') resultMsg.push(`Ошибка в количестве для артикула ${row[0]}`)
+                                                if (!isEmptyCell(row[2])) resultMsg.push(`Ошибка в количестве для артикула ${row[0]}`)
                                             }
                                         }
                                     }
@@ -182,7 +186,7 @@ export class FilesCommand extends Command {
                                             if (/^\d+$/.test(row[2])) {
                                                 balance.push({ userName: row[0], payout: Number(row[2]) })
                                             } else {
-                                                if (row[2] !== 'no') resultMsg.push(`Ошибка в сумме для пользователя ${row[0]}`)
+                                                if (!isEmptyCell(row[2])) resultMsg.push(`Ошибка в сумме для пользователя ${row[0]}`)
                                             }
                                         }
                                     }

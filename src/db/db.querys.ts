@@ -173,8 +173,8 @@ async function updateStages(pool: Pool, item: string, orderFile: number): Promis
             }
             return { status: true, id: data.id, operation: 'exist', error: '' }
         } else {
-            const resultInsert = await pool.query<ResultSetHeader>(`INSERT INTO bot_stages (name) VALUES (?)`, [item])
-            console.log(`Success add stage: ${resultInsert[0].insertId} - ${item}`)
+            const resultInsert = await pool.query<ResultSetHeader>(`INSERT INTO bot_stages (name, order_file) VALUES (?, ?)`, [item, orderFile])
+            console.log(`Success add stage: id ${resultInsert[0].insertId}, order ${orderFile} - ${item}`)
             return { status: true, id: resultInsert[0].insertId, operation: 'new', error: '' }
         }
     } catch (err: any) {
