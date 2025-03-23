@@ -734,6 +734,26 @@ async function getTaskExists(pool: Pool): Promise<{ status: boolean, error: stri
     }
 }
 
+async function getSubscribersRemote(pool: Pool, roleId: number): Promise<{ status: boolean, error: string, subscribers: { telegramId: number, userName: string }[] }> {
+    try {
+        const resultQuery = await pool.query<RowDataPacket[]>(`
+            SELECT DISTINCT
+                u.name AS userName, 
+                u.chat_id AS telegramId
+            FROM users_roles AS ur 
+            LEFT JOIN bot_users AS u ON u.id = ur.user_id
+            WHERE u.id = 2 OR (ur.role_id = ? AND u.is_active = 1)`, [roleId])
+        if (resultQuery[0].length) {
+            const subscribers = resultQuery[0] as { telegramId: number, userName: string }[]
+            return { status: true, error: '', subscribers }
+        } else {
+            return { status: false, error: 'Нет данных', subscribers: [] }
+        }
+    } catch (err: any) {
+        return { status: false, error: err.message, subscribers: [] }
+    }
+}
+
 async function addUserPay(pool: Pool, taskId: number, userId: number, payout: number): Promise<IResultUpdate> {
     try {
         const resultInsert = await pool.query<ResultSetHeader>(`INSERT INTO history_tasks (task_id, user_id, sum) VALUES (?, ?, ?)`, [taskId, userId, payout])
@@ -778,5 +798,6 @@ export {
     getBalanceSumUser,
     getBalanceUsers,
     getTaskExists,
-    addUserPay
+    addUserPay,
+    getSubscribersRemote
 }

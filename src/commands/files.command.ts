@@ -280,14 +280,24 @@ export class FilesCommand extends Command {
                                     step: stepSequenceStage
                                 }
                                 await updateSequenceStages(pool, itemSequenceStages)
-                                const userId = getSetValue('responsible')
+                                let userId: number | null = null
+                                const user = getSetValue('responsible')
+                                // Пользователь в файле записан именем
+                                if (user) {
+                                    if (isNaN(Number(user))) {
+                                       const temp = await getUserIdByName(pool, `${user}`)
+                                       if (temp.status) userId = temp.id
+                                    } else {
+                                        userId = Number(user)
+                                    }
+                                }
                                 const valueMade = getSetValue('made')
                                 const isParallelRemote = getSetValue('remote')
                                 // Формируем задачу
                                 const itemTask: IDBTask = {
                                     assortId: resultUpdateAssortment.id,
                                     stageId: resultUpdateStage.id,
-                                    userId: userId ? userId : null,
+                                    userId,
                                     needTo: prevMade,
                                     made: valueMade,
                                     defect: getSetValue('defect'),

@@ -20,7 +20,8 @@ import {
     changeAdminActive,
     clearUserStages,
     addUserStage,
-    getPackageTask
+    getPackageTask,
+    getSubscribersRemote,
 } from '../db/db.querys'
 
 interface IMyTask {
@@ -59,7 +60,28 @@ export class WebAppCommand extends Command {
                 const nextResponse = await nextTask(pool, taskId)
                 if (nextResponse.status) {
                     if (nextResponse.data) {
-                        await nextStep(pool, nextResponse.data, made)
+                        const nextStepResponse = await nextStep(pool, nextResponse.data, made)
+                        // Если задача является удаленной - нужно оповестить людей, которые подписаны на подобные задачи.
+                        if (nextStepResponse.status) {
+                            const nextTaskResponse = await getTask(pool, String(nextStepResponse.id))
+                            if (nextTaskResponse.status) {
+                                const nextTask = nextTaskResponse.data[0]
+                                if (nextTask.remote === 1) {
+                                    const subscribersResponse = await getSubscribersRemote(pool, nextTask.stageId)
+                                    if (subscribersResponse.status) {
+                                        const msgText = `Появилась новая удаленная задача - ${nextTask.assortName} (${nextTask.stageName}) в количестве ${nextTask.needTo}, цена ${nextTask.price}`
+                                        for (const subscriber of subscribersResponse.subscribers) {
+                                            try {
+                                                await ctx.telegram.sendMessage(subscriber.telegramId, msgText)
+                                                console.log(`Send subscriber - ${subscriber.userName} msg [${msgText}]`)
+                                            } catch (e: any) {
+                                                console.log(`Error send subscriber - ${e.message}`)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     } else {
                         const rootTaskResponse = await getRootTask(pool, taskId)
                         if (rootTaskResponse.status) {
