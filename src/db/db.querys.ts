@@ -212,7 +212,8 @@ async function updateTask(pool: Pool, item: IDBTask): Promise<IResultUpdate> {
             const row = resultQuery[0][0] as { id: number, status: number, needTo: number }
             // Если данная задача занята - обновим необходимое количество
             if (row.status === 1) {
-                await pool.query(`UPDATE bot_tasks SET needto = ? WHERE id = ?`, [item.needTo + row.needTo, row.id])
+                await pool.query(`UPDATE bot_tasks SET needto = ? WHERE id = ?`, [item.needTo, row.id]) // item.needTo + row.needTo
+                console.log(`Task ${row.id} with status = 1 update`)
             } else {
                 await pool.query(`UPDATE bot_tasks 
                                 SET user_id = ?,
@@ -756,7 +757,7 @@ async function getSubscribersRemote(pool: Pool, roleId: number): Promise<{ statu
 
 async function addUserPay(pool: Pool, taskId: number, userId: number, payout: number): Promise<IResultUpdate> {
     try {
-        const resultInsert = await pool.query<ResultSetHeader>(`INSERT INTO history_tasks (task_id, user_id, sum) VALUES (?, ?, ?)`, [taskId, userId, payout])
+        const resultInsert = await pool.query<ResultSetHeader>(`INSERT INTO history_tasks (user_id, sum) VALUES (?, ?)`, [userId, payout])
         return { status: true, id: resultInsert[0].insertId, operation: 'new', error: '' }
     } catch (err: any) {
         return { status: false, id: 0, operation: 'error', error: err.message }
